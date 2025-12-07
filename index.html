@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Claim Free Drink</title>
+</head>
+<body style="text-align:center; font-family:sans-serif; margin-top:50px;">
+    <h1>Claim Your Free Drink!</h1>
+    <p>Click the button below to claim your reward via WhatsApp</p>
+
+    <a id="waBtn" href="#" target="_blank" style="padding:15px 25px; background-color:gray; color:white; text-decoration:none; font-size:18px; border-radius:5px;">
+        Test Mode OFF
+    </a>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const gclid = urlParams.get('gclid') || 'no-gclid';
+        const testMode = urlParams.get('test') || 'false';
+
+        const waBtn = document.getElementById('waBtn');
+        const phone = '60194181046';
+        const text = encodeURIComponent(`Hi, saya nak claim reward free drink GCLID:${gclid}`);
+
+        if(testMode === 'true'){
+            // Test mode ON → button aktif
+            waBtn.href = `https://wa.me/${phone}?text=${text}`;
+            waBtn.style.backgroundColor = '#25D366'; // hijau
+            waBtn.innerText = "Claim Free Drink";
+        } else {
+            // Test mode OFF → button disabled
+            waBtn.href = "#";
+            waBtn.style.backgroundColor = 'gray';
+            waBtn.innerText = "Test Mode OFF";
+        }
+    </script>
+</body>
+</html>
