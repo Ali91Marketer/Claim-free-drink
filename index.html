@@ -1,57 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Claim Free Drink</title>
+  <meta charset="utf-8" />
+  <title>Claim Free Drink</title>
+  <style>
+    body { text-align:center; font-family:sans-serif; margin-top:50px; }
+    input { padding:8px; width:260px; margin:6px 0; font-size:16px; }
+    #waBtn { display:inline-block; padding:12px 20px; background-color:gray; color:white; text-decoration:none; font-size:18px; border-radius:6px; cursor:pointer; }
+    #waBtn.disabled { opacity:0.6; pointer-events:none; }
+    #note { font-size:13px; color:#666; margin-top:6px; }
+  </style>
 </head>
-<body style="text-align:center; font-family:sans-serif; margin-top:50px;">
-    <h1>Claim Your Free Drink!</h1>
-    <p>Isi nama & nombor telefon, kemudian klik WhatsApp untuk claim reward</p>
+<body>
+  <h1>Claim Your Free Drink!</h1>
+  <p>Isi nama & nombor telefon (format <strong>+60</strong>), kemudian tekan Claim untuk simpan data dan terus WhatsApp.</p>
 
-    <!-- Input customer -->
-    <input id="nameInput" type="text" placeholder="Nama anda" style="padding:8px; width:200px; margin:5px;"><br>
-    <input id="phoneInput" type="text" placeholder="No. Telefon (contoh: 60123456789)" style="padding:8px; width:200px; margin:5px;"><br>
+  <!-- Input customer -->
+  <input id="nameInput" type="text" placeholder="Nama anda" autocomplete="name"><br>
+  <input id="phoneInput" type="tel" placeholder="+60123456789" autocomplete="tel"><br>
 
-    <a id="waBtn" href="#" target="_blank" style="padding:15px 25px; background-color:gray; color:white; text-decoration:none; font-size:18px; border-radius:5px;">
-        Test Mode OFF
-    </a>
+  <a id="waBtn" class="disabled" href="#" target="_blank">Test Mode OFF</a>
+  <div id="note"></div>
 
-    <script>
-        // Ambil GCLID & test mode dari URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const gclid = urlParams.get('gclid') || 'no-gclid';
-        const testMode = urlParams.get('test') || 'false';
+  <script>
+    (function(){
+      // CONFIG: Gantikan dengan Web App URL baru
+      const webAppUrl = 'https://script.google.com/macros/s/AKfycbw_r30qFOLaYwZnYtQq35INxpKHoq9gB4W4TD4DHjlwuhAoEzs4tkD0XhXayGl_MvBd/exec';
+      const businessWhatsApp = '60194181046'; // recipient (kau) tanpa +
 
-        const waBtn = document.getElementById('waBtn');
-        const phoneDefault = '60194181046'; // nombor WhatsApp kau
-        const webAppUrl = 'https://script.google.com/macros/s/AKfycbzMyxW2a9LnTNb3OVjHWOX8DqLGQOqBn-BbEyuHNEUn8dmCkrm5uqoRUu-RUEsJ73LM/exec';
+      // URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const gclid = urlParams.get('gclid') || 'no-gclid';
+      const testMode = urlParams.get('test') || 'false';
 
-        waBtn.addEventListener('click', function(e){
-            const name = document.getElementById('nameInput').value.trim();
-            const phoneInput = document.getElementById('phoneInput').value.trim();
+      // elements
+      const waBtn = document.getElementById('waBtn');
+      const nameEl = document.getElementById('nameInput');
+      const phoneEl = document.getElementById('phoneInput');
+      const note = document.getElementById('note');
 
-            if(!name || !phoneInput){
-                alert("Sila isi nama dan nombor telefon!");
-                e.preventDefault();
-                return;
-            }
-
-            // WhatsApp auto-text
-            const text = encodeURIComponent(`Hi, saya ${name} nak claim reward free drink. GCLID:${gclid}`);
-            waBtn.href = `https://wa.me/${phoneDefault}?text=${text}`;
-
-            // POST ke Google Sheet Web App
-            fetch(webAppUrl, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name, phone: phoneInput, gclid})
-            });
-        });
-
-        if(testMode === 'true'){
-            waBtn.style.backgroundColor = '#25D366'; // hijau
-            waBtn.innerText = "Claim Free Drink";
+      // enable button if test mode
+      function setButtonActive(on) {
+        if(on) {
+          waBtn.classList.remove('disabled');
+          waBtn.style.backgroundColor = '#25D366';
+          waBtn.innerText = 'Claim Free Drink';
+          note.innerText = '';
+        } else {
+          waBtn.classList.add('disabled');
+          waBtn.style.backgroundColor = 'gray';
+          waBtn.innerText = 'Test Mode OFF';
+          note.innerText = 'Tambah ?test=true pada URL untuk aktifkan (contoh: ?test=true&gclid=test123)';
         }
-    </script>
+      }
+
+      setButtonActive(testMode === 'true');
+
+      // normalize customer phone to +60 format
+      function normalizeToPlus60(raw) {
+        if(!raw) return '';
+        raw = raw.trim();
+        if(raw.startsWith('+')) return raw;
+        if(raw.startsWith('0')) return '+60' + raw.slice(1);
+        if(raw.startsWith('60')) return '+' + raw;
+        return '+60' + raw;
+      }
+
+      function isValidPlus60(phone) {
+        return /^\+60\d{7,12}$/.test(phone);
+      }
+
+      // click handler
+      waBtn.addEventListener('click', async function(e){
+        if(testMode !== 'true') { e.preventDefault(); return; }
+        e.preventDefault();
+
+        const name = nameEl.value.trim();
+        const rawPhone = phoneEl.value.trim();
+        const customerPhone = normalizeToPlus60(rawPhone);
+
+        if(!name) { alert('Sila isi nama anda.'); nameEl.focus(); return; }
+        if(!rawPhone) { alert('Sila isi nombor telefon anda.'); phoneEl.focus(); return; }
+        if(!isValidPlus60(customerPhone)) { alert('Sila masukkan nombor dalam format +60 (contoh: +60123456789).'); phoneEl.focus(); return; }
+
+        // disable button to prevent double click
+        waBtn.classList.add('disabled');
+        waBtn.style.pointerEvents = 'none';
+        waBtn.innerText = 'Processing...';
+
+        const payload = { name, phone: customerPhone, gclid };
+
+        try {
+          const resp = await fetch(webAppUrl, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+          });
+
+          if(!resp.ok) throw new Error('Network response not ok');
+          const json = await resp.json();
+
+          if(json && (json.status === 'success' || resp.status === 200)) {
+            const message = `Hi, saya nak claim free drink.\nNama: ${name}\nPhone: ${customerPhone}\nGCLID: ${gclid}`;
+            window.location.href = `https://wa.me/${businessWhatsApp}?text=${encodeURIComponent(message)}`;
+          } else {
+            throw new Error('Server returned error');
+          }
+
+        } catch(err) {
+          console.error(err);
+          alert('Gagal simpan data. Sila cuba semula.');
+          waBtn.classList.remove('disabled');
+          waBtn.style.pointerEvents = 'auto';
+          waBtn.innerText = 'Claim Free Drink';
+        }
+      });
+
+    })();
+  </script>
 </body>
 </html>
+
 
