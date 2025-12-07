@@ -5,42 +5,53 @@
 </head>
 <body style="text-align:center; font-family:sans-serif; margin-top:50px;">
     <h1>Claim Your Free Drink!</h1>
-    <p>Click the button below to claim your reward via WhatsApp</p>
+    <p>Isi nama & nombor telefon, kemudian klik WhatsApp untuk claim reward</p>
+
+    <!-- Input customer -->
+    <input id="nameInput" type="text" placeholder="Nama anda" style="padding:8px; width:200px; margin:5px;"><br>
+    <input id="phoneInput" type="text" placeholder="No. Telefon (contoh: 60123456789)" style="padding:8px; width:200px; margin:5px;"><br>
 
     <a id="waBtn" href="#" target="_blank" style="padding:15px 25px; background-color:gray; color:white; text-decoration:none; font-size:18px; border-radius:5px;">
         Test Mode OFF
     </a>
 
     <script>
-        // Ambil parameter dari URL
+        // Ambil GCLID & test mode dari URL
         const urlParams = new URLSearchParams(window.location.search);
         const gclid = urlParams.get('gclid') || 'no-gclid';
         const testMode = urlParams.get('test') || 'false';
 
-        // WhatsApp button
         const waBtn = document.getElementById('waBtn');
-        const phone = '60194181046';
-        const text = encodeURIComponent(`Hi, saya nak claim reward free drink GCLID:${gclid}`);
+        const phoneDefault = '60194181046'; // nombor WhatsApp kau
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbzMyxW2a9LnTNb3OVjHWOX8DqLGQOqBn-BbEyuHNEUn8dmCkrm5uqoRUu-RUEsJ73LM/exec';
+
+        waBtn.addEventListener('click', function(e){
+            const name = document.getElementById('nameInput').value.trim();
+            const phoneInput = document.getElementById('phoneInput').value.trim();
+
+            if(!name || !phoneInput){
+                alert("Sila isi nama dan nombor telefon!");
+                e.preventDefault();
+                return;
+            }
+
+            // WhatsApp auto-text
+            const text = encodeURIComponent(`Hi, saya ${name} nak claim reward free drink. GCLID:${gclid}`);
+            waBtn.href = `https://wa.me/${phoneDefault}?text=${text}`;
+
+            // POST ke Google Sheet Web App
+            fetch(webAppUrl, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, phone: phoneInput, gclid})
+            });
+        });
 
         if(testMode === 'true'){
-            waBtn.href = `https://wa.me/${phone}?text=${text}`;
             waBtn.style.backgroundColor = '#25D366'; // hijau
             waBtn.innerText = "Claim Free Drink";
-        } else {
-            waBtn.href = "#";
-            waBtn.style.backgroundColor = 'gray';
-            waBtn.innerText = "Test Mode OFF";
         }
-
-        // --- POST GCLID ke Google Sheet Web App ---
-        const name = "";          // Optional, kalau nak capture nama input
-        const phoneInput = "";    // Optional, kalau nak capture phone input
-
-        fetch('https://script.google.com/macros/s/AKfycbxjIw9UcCeG7EXHqOdFaA3ktrxjNibwiqO4p-REIcImBm-Doqrg7f-7lv0U5_yt3bTz/exec', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name, phone: phoneInput, gclid})
-        });
     </script>
 </body>
 </html>
+
