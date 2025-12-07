@@ -15,6 +15,7 @@
   <h1>Claim Your Free Drink!</h1>
   <p>Isi nama & nombor telefon (format <strong>+60</strong>), kemudian tekan Claim untuk simpan data dan terus WhatsApp.</p>
 
+  <!-- Input customer -->
   <input id="nameInput" type="text" placeholder="Nama anda" autocomplete="name"><br>
   <input id="phoneInput" type="tel" placeholder="+60123456789" autocomplete="tel"><br>
 
@@ -23,19 +24,20 @@
 
   <script>
     (function(){
-      // CONFIG: masukkan Web App URL dari Apps Script kau
-      const webAppUrl = 'https://script.google.com/macros/s/AKfycbw_r30qFOLaYwZnYtQq35INxpKHoq9gB4W4TD4DHjlwuhAoEzs4tkD0XhXayGl_MvBd/exec';
-      const businessWhatsApp = '60194181046'; // nombor WhatsApp kau (tanpa +)
-
-      const waBtn = document.getElementById('waBtn');
-      const nameEl = document.getElementById('nameInput');
-      const phoneEl = document.getElementById('phoneInput');
-      const note = document.getElementById('note');
+      // CONFIG
+      const webAppUrl = 'https://script.google.com/macros/s/AKfycbzMyxW2a9LnTNb3OVjHWOX8DqLGQOqBn-BbEyuHNEUn8dmCkrm5uqoRUu-RUEsJ73LM/exec';
+      const businessWhatsApp = '60194181046'; // recipient (no WhatsApp kau, tanpa +)
 
       // URL params
       const urlParams = new URLSearchParams(window.location.search);
       const gclid = urlParams.get('gclid') || 'no-gclid';
       const testMode = urlParams.get('test') || 'false';
+
+      // elements
+      const waBtn = document.getElementById('waBtn');
+      const nameEl = document.getElementById('nameInput');
+      const phoneEl = document.getElementById('phoneInput');
+      const note = document.getElementById('note');
 
       function setButtonActive(on) {
         if(on) {
@@ -50,6 +52,7 @@
           note.innerText = 'Tambah ?test=true pada URL untuk aktifkan (contoh: ?test=true&gclid=test123)';
         }
       }
+
       setButtonActive(testMode === 'true');
 
       function normalizeToPlus60(raw) {
@@ -62,21 +65,21 @@
       }
 
       function isValidPlus60(phone) {
-        if(!phone) return false;
         return /^\+60\d{7,12}$/.test(phone);
       }
 
       waBtn.addEventListener('click', async function(e){
         if(testMode !== 'true') { e.preventDefault(); return; }
+
         e.preventDefault();
 
         const name = nameEl.value.trim();
         const rawPhone = phoneEl.value.trim();
         const customerPhone = normalizeToPlus60(rawPhone);
 
-        if(!name){ alert('Sila isi nama anda.'); nameEl.focus(); return; }
-        if(!rawPhone){ alert('Sila isi nombor telefon anda.'); phoneEl.focus(); return; }
-        if(!isValidPlus60(customerPhone)){ alert('Sila masukkan nombor dalam format +60 (contoh: +60123456789).'); phoneEl.focus(); return; }
+        if(!name) { alert('Sila isi nama anda.'); nameEl.focus(); return; }
+        if(!rawPhone) { alert('Sila isi nombor telefon anda.'); phoneEl.focus(); return; }
+        if(!isValidPlus60(customerPhone)) { alert('Sila masukkan nombor dalam format +60 (contoh: +60123456789).'); phoneEl.focus(); return; }
 
         waBtn.classList.add('disabled');
         waBtn.style.pointerEvents = 'none';
@@ -91,12 +94,17 @@
             body: JSON.stringify(payload)
           });
 
+          if(!resp.ok) throw new Error('Network response not ok');
+
           const json = await resp.json();
-          if((json && json.status === 'success') || resp.status === 200){
+          if(json && json.status === 'success' || resp.status === 200) {
             const message = `Hi, saya nak claim free drink.\nNama: ${name}\nPhone: ${customerPhone}\nGCLID: ${gclid}`;
-            window.location.href = `https://wa.me/${businessWhatsApp}?text=${encodeURIComponent(message)}`;
-          } else throw new Error('Server returned error');
-        } catch(err){
+            const waText = encodeURIComponent(message);
+            window.location.href = `https://wa.me/${businessWhatsApp}?text=${waText}`;
+          } else {
+            throw new Error('Server returned error');
+          }
+        } catch(err) {
           console.error(err);
           alert('Gagal simpan data. Sila cuba semula.');
           waBtn.classList.remove('disabled');
@@ -104,6 +112,7 @@
           waBtn.innerText = 'Claim Free Drink';
         }
       });
+
     })();
   </script>
 </body>
