@@ -12,25 +12,35 @@
     </a>
 
     <script>
+        // Ambil parameter dari URL
         const urlParams = new URLSearchParams(window.location.search);
         const gclid = urlParams.get('gclid') || 'no-gclid';
         const testMode = urlParams.get('test') || 'false';
 
+        // WhatsApp button
         const waBtn = document.getElementById('waBtn');
         const phone = '60194181046';
         const text = encodeURIComponent(`Hi, saya nak claim reward free drink GCLID:${gclid}`);
 
         if(testMode === 'true'){
-            // Test mode ON → button aktif
             waBtn.href = `https://wa.me/${phone}?text=${text}`;
             waBtn.style.backgroundColor = '#25D366'; // hijau
             waBtn.innerText = "Claim Free Drink";
         } else {
-            // Test mode OFF → button disabled
             waBtn.href = "#";
             waBtn.style.backgroundColor = 'gray';
             waBtn.innerText = "Test Mode OFF";
         }
+
+        // --- POST GCLID ke Google Sheet Web App ---
+        const name = "";          // Optional, kalau nak capture nama input
+        const phoneInput = "";    // Optional, kalau nak capture phone input
+
+        fetch('https://script.google.com/macros/s/AKfycbxjIw9UcCeG7EXHqOdFaA3ktrxjNibwiqO4p-REIcImBm-Doqrg7f-7lv0U5_yt3bTz/exec', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, phone: phoneInput, gclid})
+        });
     </script>
 </body>
 </html>
